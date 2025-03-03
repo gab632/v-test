@@ -8,7 +8,13 @@ import hashlib
 
 def main():
 
-    try:
+    # input from command line.
+    # order of arguments: 
+    # 1. source folder path,
+    # 2. replica folder path,
+    # 3. log file path,
+    # 4. interval value (in seconds)    
+    try: 
         src_folder = sys.argv[1]
         r_folder = sys.argv[2]
         log_file_path = sys.argv[3]
@@ -39,8 +45,8 @@ def replica_func(src, dest, logger):
             os.chdir(src)
             file_path = os.getcwd() + '\\' + file
             if not file in os.listdir(dest):
-
                 shutil.copy2(file_path, dest)
+
                 # log the file creation.
                 message = str(datetime.now())  + ' File \"' + file + '\" copied.'
                 logger.debug(message)
@@ -53,6 +59,7 @@ def replica_func(src, dest, logger):
                 dest_file_last_modified = os.path.getmtime(dest_file_path)
                 if not src_file_last_modified == dest_file_last_modified:
                     shutil.copy2(file_path, dest)
+
                     # log the file modification. 
                     message = str(datetime.now()) + ' File \"' + file + '\" modified.'
                     logger.debug(message)
@@ -63,6 +70,7 @@ def replica_func(src, dest, logger):
                 os.chdir(dest)
                 file_path = os.getcwd() + '\\' + file
                 os.remove(file_path)  
+                
                 # log the file removal.
                 message = str(datetime.now()) + ' File \"' + file + '\" removed.'
                 logger.debug(message)
@@ -70,7 +78,6 @@ def replica_func(src, dest, logger):
     except OSError as exc: 
         print("Error during copy/medification/removal operation.")
         print(exc)
-
         sys.exit()
     
 
@@ -84,17 +91,22 @@ def create_folders_and_log_file(folder1, folder2, file_path):
 
         if not os.path.exists(folder2):
             os.makedirs(folder2)
-
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-    
+        if os.path.isabs(file_path):
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        else: 
+            abs_file_path = os.getcwd() + '\\logs\\' + file_path
+            os.makedirs(os.path.dirname(abs_file_path), exist_ok=True)
+        
     except OSError as exc:
         print("Error while creating folders and log file.")
         print(exc)
         sys.exit()
 
 
-# hashing function for both files and folders
-# returns a string representing the hexadecimal number of the hash result.  
+# hashing function for both files and folders.
+# NOTE: I took the original base code of this hash function from a stackoverflow thread. 
+#       Then I tested and modified the code for my purpose. 
+# returns a string representing the hexadecimal number of the hash result  
 def calculate_md5(source):
 
     hash_func = hashlib.new("md5")
@@ -126,13 +138,13 @@ def calculate_md5(source):
 
 # creates a logger object.
 # adds a console log stream. 
-# NOTE: for these very lines of code (how to log to the console), 
-# I used a chatGPT reply, 
-# and then I modified the code a bit. 
-# returns a logger. 
-
+# NOTE: for some lines of code ("how to log to the console"), 
+#       I used a chatGPT reply, 
+#       and then I tested and modified the chatGPT code for my purpose. 
+# returns a logger object
 def initialize_logger(log_file_path):
     logger = logging.getLogger(__name__)
+
     logging.basicConfig(filename=log_file_path, encoding='utf-8', level=logging.DEBUG)
 
     console = logging.StreamHandler()
@@ -144,5 +156,19 @@ def initialize_logger(log_file_path):
     logger.addHandler(console)
     return logger
 
+def create_absolute_file_path(file_path):
+    try:
+        if os.path.isabs(file_path):
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            return file_path
+        else: 
+            abs_file_path = os.getcwd() + '\\logs\\' + file_path
+            os.makedirs(os.path.dirname(abs_file_path), exist_ok=True)
+            return abs_file_path
+        
+    except OSError as exc:
+        print("error while creating the file absolute path")
+        print(exc)
+    
 main()
     
