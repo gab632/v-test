@@ -8,10 +8,9 @@ import hashlib
 
 def main():
 
-    # input from command line.
-    # order of arguments: 
-    # 1. source folder path,
-    # 2. replica folder path,
+    # input from command line - order of arguments: 
+    # 1. source folder absolute path,
+    # 2. replica folder absolute path,
     # 3. log file path,
     # 4. interval value (in seconds)    
     try: 
@@ -24,11 +23,13 @@ def main():
         print("Error while starting the script.")
         print(exc)
         sys.exit()
+
+    abs_file_path = create_absolute_file_path(log_file_path)
+    create_folders_and_log_file(src_folder, r_folder, abs_file_path)
+
+    logger = initialize_logger(abs_file_path)
     
-    create_folders_and_log_file(src_folder, r_folder, log_file_path)
-
-    logger = initialize_logger(log_file_path)
-
+    # runs until external command (i.e. ctrl+c) breaks the loop.
     while True:     
         replica_func(src_folder, r_folder, logger)
         time.sleep(interval)
@@ -65,7 +66,7 @@ def replica_func(src, dest, logger):
                     logger.debug(message)
         # remove the file if it is no longer in the source folder.
         for file in os.listdir(dest):
-            # file removal code.
+            # file removal code.    
             if not file in os.listdir(src):
                 os.chdir(dest)
                 file_path = os.getcwd() + '\\' + file
@@ -76,7 +77,7 @@ def replica_func(src, dest, logger):
                 logger.debug(message)
 
     except OSError as exc: 
-        print("Error during copy/medification/removal operation.")
+        print("Error during copy/modification/removal operation.")
         print(exc)
         sys.exit()
     
@@ -91,6 +92,7 @@ def create_folders_and_log_file(folder1, folder2, file_path):
 
         if not os.path.exists(folder2):
             os.makedirs(folder2)
+
         if os.path.isabs(file_path):
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
         else: 
